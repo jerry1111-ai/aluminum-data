@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>海外电解铝数据看板</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Arial&display=swap');
+
+:root {
+  --bg:        #0a0e1a;
+  --surface:   #111827;
+  --surface2:  #161f30;
+  --surface3:  #1a2540;
+  --border:    #1e2d4a;
+  --border2:   #2a3d5e;
+  --accent:    #1a4a7a;
+  --accent-l:  #2563a8;
+  --accent-ll: #4a8fd4;
+  --red:       #7a1a1a;
+  --red-l:     #a83030;
+  --red-ll:    #d45555;
+  --gold:      #c8a44a;
+  --gold-l:    #e8c060;
+  --text:      #dce8f5;
+  --text2:     #8ba8c8;
+  --text3:     #4a6a8a;
+  --text4:     #2a4060;
+  --header-bg: #0d1828;
+  --row-hover: #141e30;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-family: "楷体", "KaiTi", "STKaiti", serif;
+}
+
+/* numbers always Arial */
+.n { font-family: Arial, sans-serif; }
+
+/* ── Topbar ── */
+.topbar {
+  background: linear-gradient(90deg, #0a1220 0%, #0d1828 100%);
+  border-bottom: 2px solid var(--accent-l);
+  padding: 0 28px;
+  display: flex; align-items: center; gap: 0;
+  position: sticky; top: 0; z-index: 200;
+  box-shadow: 0 2px 20px rgba(0,40,100,0.4);
+}
+.logo {
+  font-size: 16px; font-weight: 700; letter-spacing: 1px;
+  color: var(--text);
+  padding: 16px 24px 16px 0;
+  border-right: 1px solid var(--border2);
+  margin-right: 4px;
+  white-space: nowrap;
+}
+.logo em { color: var(--accent-ll); font-style: normal; }
+
+.nav-tabs { display: flex; flex: 1; overflow-x: auto; }
+.nav-tab {
+  padding: 0 20px; height: 54px;
+  display: flex; align-items: center; gap: 7px;
+  font-size: 13.5px; font-family: "楷体","KaiTi","STKaiti",serif;
+  color: var(--text3); cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.18s; white-space: nowrap; user-select: none;
+}
+.nav-tab:hover { color: var(--text2); background: rgba(255,255,255,0.03); }
+.nav-tab .pip { width:6px; height:6px; border-radius:50%; flex-shrink:0; background:var(--text4); transition:background 0.18s; }
+
+.tab-t1.active  { color: var(--accent-ll); border-bottom-color: var(--accent-ll); }
+.tab-t1.active .pip { background: var(--accent-ll); }
+.tab-tg.active  { color: var(--red-ll);    border-bottom-color: var(--red-ll); }
+.tab-tg.active .pip { background: var(--red-ll); }
+.tab-tb.active  { color: var(--gold-l);    border-bottom-color: var(--gold-l); }
+.tab-tb.active .pip { background: var(--gold-l); }
+
+/* ── Panels ── */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── Ctrl bar ── */
+.ctrl-bar {
+  padding: 9px 24px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.ctrl-title { font-size: 13px; font-weight: 700; color: var(--text2); letter-spacing: 0.5px; }
+
+input[type=text], select {
+  background: var(--surface3); border: 1px solid var(--border2);
+  border-radius: 4px; color: var(--text);
+  font-family: "楷体","KaiTi","STKaiti",serif; font-size: 13px;
+  padding: 5px 10px; outline: none; transition: border-color 0.2s;
+}
+input[type=text] { width: 180px; }
+input[type=text]:focus, select:focus { border-color: var(--accent-ll); }
+input::placeholder { color: var(--text4); }
+select { cursor: pointer; }
+
+.badge {
+  font-family: Arial,sans-serif; font-size: 11px;
+  padding: 3px 9px; border-radius: 3px;
+  border: 1px solid var(--border2); color: var(--text3); background: var(--surface3);
+}
+.stats { font-family: Arial,sans-serif; font-size: 11.5px; color: var(--text3); margin-left: auto; }
+.stats b { color: var(--accent-ll); }
+
+/* ── Table wrapper ── */
+.table-wrap { overflow-x: auto; overflow-y: auto; height: calc(100vh - 108px); }
+.table-wrap-plain { overflow-x: auto; overflow-y: auto; height: calc(100vh - 54px); }
+
+table { border-collapse: collapse; width: max-content; min-width: 100%; font-size: 13px; }
+
+/* header */
+thead th {
+  background: var(--header-bg);
+  font-family: "楷体","KaiTi","STKaiti",serif;
+  font-weight: 700; font-size: 12px;
+  padding: 9px 11px; white-space: nowrap;
+  border-bottom: 2px solid; border-right: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 10; text-align: center;
+  letter-spacing: 0.3px;
+}
+thead th.nh { font-family: Arial,sans-serif; font-size: 11px; color: var(--text3); }
+
+.t1-th thead th { color: var(--accent-ll); border-bottom-color: var(--accent-l); }
+.tg-th thead th { color: var(--red-ll);    border-bottom-color: var(--red-l); }
+.tb-th thead th { color: var(--gold-l);    border-bottom-color: var(--red-l); }
+
+/* sticky cols (t1 + tg) */
+.sc th:nth-child(1), .sc td:nth-child(1) { position:sticky;left:0;z-index:5;min-width:72px;border-right:1px solid var(--border2); }
+.sc th:nth-child(2), .sc td:nth-child(2) { position:sticky;left:72px;z-index:5;min-width:80px;border-right:1px solid var(--border2); }
+.sc th:nth-child(3), .sc td:nth-child(3) { position:sticky;left:152px;z-index:5;min-width:70px;border-right:1px solid var(--border2); }
+.sc th:nth-child(4), .sc td:nth-child(4) { position:sticky;left:222px;z-index:5;min-width:130px;border-right:2px solid var(--border2); }
+.sc thead th:nth-child(1),.sc thead th:nth-child(2),
+.sc thead th:nth-child(3),.sc thead th:nth-child(4) { z-index:20;background:var(--header-bg); }
+.sc tbody td:nth-child(1),.sc tbody td:nth-child(2),
+.sc tbody td:nth-child(3),.sc tbody td:nth-child(4) { background:var(--surface); }
+.sc tbody tr:hover td:nth-child(1),.sc tbody tr:hover td:nth-child(2),
+.sc tbody tr:hover td:nth-child(3),.sc tbody tr:hover td:nth-child(4) { background:var(--row-hover); }
+
+/* rows */
+tbody tr { border-bottom:1px solid var(--border); transition:background 0.1s; }
+tbody tr:hover { background: var(--row-hover); }
+tbody td {
+  padding: 7px 11px; white-space: nowrap;
+  border-right: 1px solid var(--border); vertical-align: middle;
+  font-family: "楷体","KaiTi","STKaiti",serif;
+}
+td.n { font-family: Arial,sans-serif; font-size: 12px; text-align: right; color: var(--text2); }
+td.n.est { color: var(--accent-ll); }
+td.n.neg { color: var(--red-ll); }
+td.n.pos { color: #5ab888; }
+td.n.pct { font-size: 11px; }
+td.n.grow { color: #5ab888 !important; font-weight: 700; }
+
+/* region divider */
+tr.region-start td { border-top: 2px solid var(--accent); }
+td.rc { font-weight: 700; color: var(--accent-ll) !important; font-size: 13px; }
+
+/* special rows */
+tr.row-total td {
+  background: #0a1830 !important; font-weight: 700;
+  border-top: 2px solid var(--accent-l);
+  color: var(--accent-ll) !important;
+  font-size: 13px;
+}
+tr.row-yoy td {
+  background: #0e0e1e !important; font-style: italic;
+  color: var(--text3) !important; font-size: 11.5px;
+  font-family: Arial,sans-serif !important;
+}
+tr.row-empty td { height: 4px; background: var(--bg); }
+tr.row-subtotal td {
+  background: #100a18 !important;
+  border-top: 1px solid var(--red-l);
+  border-bottom: 1px solid var(--red-l);
+  font-weight: 700; font-size: 12.5px;
+  color: var(--red-ll) !important;
+}
+tr.row-grandtotal td {
+  background: #180a0a !important;
+  border-top: 2px solid var(--red-ll);
+  font-weight: 700; font-size: 13px;
+  color: var(--gold-l) !important;
+}
+
+/* balance table */
+tr.tb-supply td  { color: var(--accent-ll); }
+tr.tb-domestic td { color: #7ab8e8; }
+tr.tb-global td  { color: var(--gold-l); font-weight: 600; }
+tr.tb-demand td  { color: var(--red-ll); }
+tr.tb-balance td { font-weight: 700; font-size: 13.5px; }
+tr.tb-lme td     { color: var(--gold-l); }
+tr.tb-yoy td     { font-style: italic; font-size: 11px; color: var(--text3) !important; font-family:Arial,sans-serif !important; }
+
+.hidden { display: none !important; }
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">海外电解铝<em>数据看板</em></div>
+  <div class="nav-tabs">
+    <div class="nav-tab tab-t1 active" onclick="switchTab('t1')"><span class="pip"></span>电解铝海外产量明细</div>
+    <div class="nav-tab tab-tg" onclick="switchTab('tg')"><span class="pip"></span>海外电解铝增量项目产量预测明细表</div>
+    <div class="nav-tab tab-tb" onclick="switchTab('tb')"><span class="pip"></span>全球年度平衡表</div>
+  </div>
+</div>
+
+<!-- ═══ Panel 1 ═══ -->
+<div class="panel active" id="panel-t1">
+  <div class="ctrl-bar">
+    <span class="ctrl-title">电解铝海外产量明细</span>
+    <input type="text" id="t1-search" placeholder="搜索国家、集团、简称…" oninput="filterT1()">
+    <select id="t1-region" onchange="filterT1()"><option value="">全部地区</option></select>
+    <span class="badge" id="t1-count">—</span>
+    <span class="stats">建成产能合计 <b>4,083.2</b> 万吨 &nbsp;·&nbsp; 2024年产量 <b>2,913.66</b> 万吨</span>
+  </div>
+  <div class="table-wrap">
+    <table class="t1-th sc">
+      <thead><tr>
+        <th>地区</th><th>国家</th><th>英文名</th><th>所属集团</th><th>简称</th>
+        <th>建成产能<br>(万吨)</th>
+        <th class="nh">2019</th><th class="nh">2020</th><th class="nh">2021</th>
+        <th class="nh">2022</th><th class="nh">2023</th><th class="nh">2024</th>
+        <th class="nh">2025E</th><th class="nh">2026E</th><th class="nh">2027E</th>
+        <th class="nh">2028E</th><th class="nh">2029E</th>
+      </tr></thead>
+      <tbody id="t1-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ Panel 2 ═══ -->
+<div class="panel" id="panel-tg">
+  <div class="ctrl-bar">
+    <span class="ctrl-title">海外电解铝增量项目产量预测明细表</span>
+    <input type="text" id="tg-search" placeholder="搜索国家、集团、简称…" oninput="filterTg()">
+    <select id="tg-region" onchange="filterTg()"><option value="">全部地区</option></select>
+    <span class="badge" id="tg-count">—</span>
+    <span class="stats">绿色高亮 = 较2024年有增长 &nbsp;·&nbsp; 各洲末行为净增量小计</span>
+  </div>
+  <div class="table-wrap">
+    <table class="tg-th sc">
+      <thead><tr>
+        <th>地区</th><th>国家</th><th>英文名</th><th>所属集团</th><th>简称</th>
+        <th>建成产能<br>(万吨)</th>
+        <th class="nh">2019</th><th class="nh">2020</th><th class="nh">2021</th>
+        <th class="nh">2022</th><th class="nh">2023</th><th class="nh">2024</th>
+        <th class="nh">2025E净增</th><th class="nh">2026E净增</th><th class="nh">2027E净增</th>
+        <th class="nh">2028E净增</th><th class="nh">2029E净增</th>
+      </tr></thead>
+      <tbody id="tg-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ Panel 3 ═══ -->
+<div class="panel" id="panel-tb">
+  <div class="table-wrap table-wrap-plain">
+    <table class="tb-th" style="min-width:750px">
+      <thead><tr>
+        <th style="text-align:left;min-width:150px">指标</th>
+        <th class="nh">2019</th><th class="nh">2020</th><th class="nh">2021</th>
+        <th class="nh">2022</th><th class="nh">2023</th><th class="nh">2024</th>
+        <th class="nh">2025E</th><th class="nh">2026E</th><th class="nh">2027E</th>
+        <th class="nh">2028E</th>
+      </tr></thead>
+      <tbody id="tb-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const T1 = [["地区", "国家", "", "所属集团", "简称", "建成产能（万吨）", 2019.0, 2020.0, 2021.0, 2022.0, 2023.0, 2024.0, "2025E", "2026E", "2027E", "2028E", "2029E"], ["非洲", "南非共和国", "South Africa", "South32", "Hillside", 72, 71.7, 71.7, 71.4, 71.8, 71.6, 72.3, 72.4033, 72.8, 72.8, 72.8, 72.8], ["非洲", "莫桑比克", "Mozambique", "South32(63.7%)", "Mozal", 31.4, 56.4756, 57.1125, 56.4756, 57.4106, 51.6484, 51.1774, 58.6104, 9.95, 0, 0, 0], ["非洲", "埃及", "Egypt", "Egyptalum", "Nag Hammadi", 32, 28.2384, 27.0, 29.0, 30.0, 29.9501, 29.2541, 30, 30, 30, 30, 30], ["非洲", "加纳", "Ghana", "Valco", "Valco", 20, 3.9033, 2.8716, 4.5052, 3.1247, 3.2521, 3.0, 3, 5.0, 5.0, 5.0, 5.0], ["非洲", "尼日利亚", "Nigeria", "Alscon", "Ikot Abasi", 19.3, "", "", "", "", "", "", "", "", "", "", ""], ["非洲", "安哥拉", " Angola", "华通集团", "Bengo", 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 12, 20, 36, 36], ["非洲", "喀麦隆共和国", "Cameroon", "Alucam", "Edea", 10, 3.8671, 2.2481, 2.0, 2.0, 2.8277, 3.5, 3.5, 3.5, 4.0, 4.0, 4.0], ["大洋洲", "澳大利亚", "Australia", "Rio Tinto(52%)", "Tomago", 60, 58.8, 59.2, 59.2, 58.6, 58.9, 58.7, 59, 59, 59, 59, 59], ["大洋洲", "澳大利亚", "Australia", "Rio Tinto(59%)", "Boyne Island", 58.4, 49.9, 51.0, 50.2, 45.0, 49.6, 50.7, 51.5, 51.5, 51.5, 51.5, 51.5], ["大洋洲", "澳大利亚", "", "", "Boyne Island I", "", "", "", "", "", "", "", "", "", "", "", ""], ["大洋洲", "澳大利亚", "", "", "Boyne Island II", "", "", "", "", "", "", "", "", "", "", "", ""], ["大洋洲", "新西兰", "New Zealand", "Rio Tinto(79%)", "Tiwai Point", 36.5, 35.1, 33.3, 33.3, 33.6, 33.4, 29.0, 28.7479, 33.5, 33.5, 34, 34], ["大洋洲", "澳大利亚", "Australia", "Awac(55%)", "Portland", 35.8, 28.8911, 28.5773, 27.2893, 28.9115, 28.3729, 31.4391, 34, 34, 34, 34, 34], ["大洋洲", "澳大利亚", "Australia", "Rio Tinto", "Bell Bay", 20, 18.9, 19.2, 18.9, 18.5, 18.6, 18.7, 18.5, 18.5, 19, 19, 19], ["北美洲", "加拿大", "Canada", "Rio Tinto(40%)", "Alouette", 63, 60.2, 62.3, 62.9, 62.8, 63.4, 63.2, 63.4, 63.5, 63.5, 63.5, 63.5], ["北美洲", "加拿大", "Canada", "Rio Tinto", "Alma", 48, 47.2, 47.3, 47.1, 48.2, 48.4, 48.3, 48.4, 48.5, 48.5, 48.5, 48.5], ["北美洲", "加拿大", "Canada", "Alco (74.9%),Rio Tinto (25.1%)", "Becancour", 46, 7.7, 39.3, 46.3, 45.9, 46.5, 47.3, 46.5, 46.5, 46.5, 46.5, 46.5], ["北美洲", "加拿大", "Canada", "Rio Tinto", "Arvida", 17.6, 17.5, 16.9, 16.8, 17.1, 17.2, 15.3, 6.726, 0, 0, 0, 0], ["北美洲", "加拿大", "Canada", "Rio Tinto", "Arvida AP60", 6, 6.0, 6.0, 6.0, 5.8, 5.9, 6.1, 7.0082, 17.7753, 22.0, 22.0, 22.0], ["北美洲", "加拿大", "Canada", "Rio Tinto", "Grande Baie", 25, 23.3, 22.5, 23.0, 23.2, 22.9, 22.9, 23.5, 23.5, 23.5, 23.5, 23.5], ["北美洲", "加拿大", "Canada", "Rio Tinto", "Kitimat", 43.7, 38.5, 32.9, 26.3, 14.5, 37.7, 41.9, 43.5, 43.5, 43.5, 43.5, 43.5], ["北美洲", "加拿大", "Canada", "Alcoa", "Baie-Comeau North", 31.2, 30.5321, 30.877, 31.4252, 31.4219, 32.1008, 32.0995, 32.4, 32.4, 32.4, 32.4, 32.4], ["北美洲", "美国", "United States", "Alcoa", "Ferndale", 27.9, 16.4329, 8.4657, 0.0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0], ["北美洲", "美国", "United States", "Alcoa", "Warrick", 26.9, 16.1, 15.5219, 16.1, 13.3778, 11.0277, 15.1795, 16.0, 16.0, 16.0, 16.0, 16.0], ["北美洲", "美国", "United States", "Magnitude 7 Metals", "New Madrid", 27.6, 17.0548, 16.729, 16.2499, 13.3562, 13.9748, 0.9945, 0, 0, 0, 0, 0], ["北美洲", "美国", "United States", "Alcoa", "Massena West", 13, 14.0701, 13.8743, 13.0, 13.6981, 14.0, 12.9254, 13, 13, 13, 13, 13], ["北美洲", "美国", "United States", "Century Aluminum", "Mount Holly", 22.9, 11.4496, 10.6503, 8.8, 14.7658, 16.6, 16.5, 17.3, 20, 22.9, 22.9, 22.9], ["北美洲", "美国", "United States", "Century Aluminum", "Sebree", 22, 21.8878, 20.4448, 20.9, 21.6, 21.4, 21.6, 22.0, 22.0, 22.0, 22.0, 22.0], ["北美洲", "美国", "United States", "Century Aluminum", "Hawesville", 25, 15.6137, 16.9918, 17.2, 10.0548, 0.0, 0.0, 0, 0, 0, 0, 0], ["北美洲", "加拿大", "Canada", "Alcoa", "Deschambault", 28.7, 28.6753, 28.7638, 28.5748, 28.7748, 28.9279, 29.5027, 30, 30, 30, 30, 30], ["北美洲", "加拿大", "Canada", "Rio Tinto", "Laterriere", 26, 25.7, 25.0, 25.2, 25.3, 24.4, 25.2, 25.5, 25.5, 25.5, 25.5, 25.5], ["欧洲", "俄罗斯联邦", "Russia", "UC Rusal", "Krasnoyarsk", 101.9, 101.8, 102.0, 101.9, 101.7, 101.4, 101.5, 101.5, 101.5, 101.5, 101.5, 101.5], ["欧洲", "俄罗斯联邦", "Russia", "UC Rusal", "Bratsk", 101, 100.8, 100.4, 100.9, 100.5, 100.5, 100.2, 101, 101, 101, 101, 101], ["欧洲", "俄罗斯联邦", "Russia", "UC Rusal", "Sayanogorsk", 54.2, 53.9, 52.9, 53.6, 53.9, 53.8, 53.1, 54, 54, 54, 54, 54], ["欧洲", "俄罗斯联邦", "Russia", "UC Rusal", "Taishet Project", 42.8, 0.0, 0.0, 0.0, 7.8, 11.2, 28.8, 42, 43, 43, 43, 43], ["欧洲", "俄罗斯联邦", "Russia", "UC Rusal", "Irkutsk", 42.2, 42.2, 42.2, 42.4, 42.4, 42.5, 42.3, 42.5, 42.5, 42.5, 42.5, 42.5], ["欧洲", "俄罗斯联邦", "Russia", "UC Rusal", "Boguchansky", 30, 25.7713, 29.0046, 29.2, 29.8, 29.998, 30.123, 30, 30, 30, 30, 30], ["欧洲", "俄罗斯联邦", "Russia", "UC Rusal", "Khakas", 29.7, 29.4, 30.8, 30.3, 30.6, 30.4, 30.7, 30.5, 30.5, 30.5, 30.5, 30.5], ["欧洲", "俄罗斯联邦", "Russia", "UC Rusal", "Novokuznetsk", 21.5, 21.5, 21.5, 21.5, 21.3, 20.4, 19.6, 21, 21, 21, 21, 21], ["欧洲", "俄罗斯联邦", "Russia", "UC Rusal", "Kandalaksha", 7.6, 7.2, 7.0, 6.3, 6.4, 5.7, 5.4, 6.5, 6.5, 6.5, 6.5, 6.5], ["欧洲", "俄罗斯联邦", "Russia", "UC Rusal", "Volgograd", 6.9, 6.9, 7.0, 7.0, 7.0, 6.9, 6.8, 6, 6, 6, 6, 6], ["欧洲", "波斯尼亚和黑塞哥维那", "Bosnia And Herzegovian", "Aluminij Mostar", "Mostar", 130, 4.5603, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0], ["欧洲", "法国", "France", "American Industrial Partners(Aip)", "Dunkerque", 28.4, 28.5, 28.5, 29.2, 23.8658, 26.384, 28.5, 28.5, 28.5, 28.5, 28.5, 28.5], ["欧洲", "法国", "France", "Trimet Aluminium Ag", "St-Jean-De-Maurienne", 14.5, 13.9617, 14.5, 14.2479, 13.05, 13.0, 13.0, 14.1301, 14.5, 14.5, 14.5, 14.5], ["欧洲", "德国", "Germany", "Speira", "Neuss", 23.5, "", "", "", "", "", "", "", "", "", "", ""], ["欧洲", "德国", "Germany", "Trimet Aluminium Ag", "Essen", 16.5, 15.874, 14.9216, 15.5071, 7.9825, 4.8331, 5.6044, 7, 13, 13, 16.0, 16.0], ["欧洲", "德国", "Germany", "Trimet Aluminium Ag", "Hamburg", 13.5, 12.2493, 13.5, 13.0414, 8.7695, 5.5078, 5.7393, 7, 10, 12, 13.5, 13.5], ["欧洲", "德国", "Germany", "Trimet Aluminium Ag", "Voerde", 9.5, 9.6, 9.5, 9.626, 5.8922, 2.8576, 3.5664, 4, 7, 9.5, 9.5, 9.5], ["欧洲", "西班牙", "Spain", "Alu Iberica", "Aviles", 9.3, 0.3699, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0], ["欧洲", "西班牙", "Spain", "Alu Iberica", "La Coruna", 8.7, 0.2466, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0], ["欧洲", "希腊", "Greece", "Aluminium Of Greece", "Distomon", 18.5, 18.3488, 18.2, 18.3638, 18.714, 18.3362, 18.25, 18.5, 18.5, 18.5, 18.5, 18.5], ["欧洲", "冰岛", "Iceland", "Alcoa", "Fjardaal", 37, 29.6247, 27.7459, 25.754, 25.0, 29.18, 33.0, 33, 33, 33, 33, 34], ["欧洲", "冰岛", "Iceland", "Century Aluminum", "Grundartangi", 31.7, 31.5938, 31.3, 31.5, 30.6301, 31.0, 30.9, 28, 17, 28, 32.5, 32.5], ["欧洲", "冰岛", "Iceland", "Rio Tinto", "Straumsvik", 21, 18.4, 18.3, 20.3, 20.2, 20.9, 20.2, 21.2, 21.2, 21.2, 21.2, 21.2], ["欧洲", "意大利", "Italy", "Sider Alloys", "Porto Vesme", 15, "", "", "", "", "", "", "", "", "", "", ""], ["欧洲", "黑山", "Montenegro", "Uniprom", "Podgorica", 6.1, 4.1008, 3.7459, 5.7699, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0], ["欧洲", "荷兰", "Netherlands", "York Capital", "Delfzijl", 11, 7.8767, 12.0, 9.0822, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0], ["欧洲", "挪威", "Norway", "Hydro", "Sunndalsora", 42.5, 40.3, 40.9, 42.3, 42.6, 42.8, 42.7, 43, 45.0, 45.0, 45.0, 45.0], ["欧洲", "挪威", "Norway", "Hydro", "Ardal", 20.5, 20.1, 20.2, 20.1, 20.3, 19.2, 19.8, 19.8, 19.8, 19.8, 19.8, 19.8], ["欧洲", "挪威", "Norway", "Hydro", "Karmoy", 27.4, 25.7, 26.8, 26.6, 24.7, 20.8, 20.6, 25.3904, 26.5, 26.5, 26.5, 26.5], ["欧洲", "挪威", "Norway", "Hydro", "Karmoy Pilot", 7.5, "", "", "", "", "", "", "", "", "", "", ""], ["欧洲", "挪威", "Norway", "Hydro", "Hoyanger", 6.5, 6.5, 6.5, 6.6, 6.7, 6.7, 6.7, 6.7, 6.7, 6.7, 6.7, 6.7], ["欧洲", "挪威", "Norway", "Hydro", "Husnes", 19.9, 9.5, 9.4, 16.9, 18.6, 15.0, 15.4, 18.7534, 19.5, 19.5, 19.5, 19.5], ["欧洲", "挪威", "Norway", "Alcoa", "Lista", 9.5, 5.7227, 6.5719, 7.2534, 5.4959, 4.5041, 5.0, 6, 9, 9.5, 9.5, 9.5], ["欧洲", "挪威", "Norway", "Alcoa", "Mosjoen", 20, 14.2474, 13.826, 14.126, 15.2466, 18.0082, 20.373, 20.0, 20.0, 21.4, 21.4, 21.4], ["欧洲", "罗马尼亚", "Romania", "Vimetco N.V.(54.19)", "Slatina", 26.5, 28.0248, 19.2428, 20.1474, 7.8568, 6.5058, 6.729, 6.5, 7, 10, 26.5, 26.5], ["欧洲", "斯洛伐克", "Slovakia", "Hydro(55.3)", "Slovalco", 0, 17.5, 15.2, 16.4, 7.2, 0.0, 0.0, 0, 0, 0, 0, 0], ["欧洲", "斯洛文尼亚", "Slovenia", "Eles(86.3)", "Talum (Kidricevo)", 8.4, 7.4589, 5.0, 10.7851, 1.9222, 0.1487, 0.0, 0, 0, 0, 0, 0], ["欧洲", "西班牙", "Spain", "Alcoa", "San Ciprian", 22.8, 22.6522, 22.2547, 19.2778, 0.2466, 0.0, 1.3003, 5, 13, 18, 22, 22], ["欧洲", "瑞典", "Sweden", "Uc Rusal", "Sundsvall", 12.8, 12.0, 11.7, 12.4, 12.0, 11.9, 10.9, 12, 12.5, 12.5, 12.5, 12.5], ["欧洲", "英国", "Uk", "Liberty House Group(100%)", "Lochaber", 4.9, 4.6507, 3.7171, 4.0, 3.165, 3.0, 3.2011, 3.8, 4.0, 4.0, 4.0, 4.0], ["亚洲（除中国）", "巴林", "Bahrain", "Alba", "Alba", 155, 136.5005, 154.85, 156.1222, 160.0111, 162.0665, 162.2261, 163.5, 100, 140, 164.5, 164.5], ["亚洲（除中国）", "印度", "India", "Vedanta", "Jharsuguda", 175, 135.01, 134.3115, 164.624, 171.808, 176.2, 182.646, 183.9377, 183.9377, 183.9377, 183.9377, 183.9377], ["亚洲（除中国）", "印度", "India", "Vedanta(51%),State(49%)", "Korba", 59.4, 56.33, 56.9492, 58.0422, 56.926, 58.4, 58.9514, 75, 70, 95, 101.5, 101.5], ["亚洲（除中国）", "印度", "India", "Nalco", "Angul", 46, 42.4877, 43.2596, 45.5922, 46.0427, 46.4959, 46.2378, 46.5, 46.5, 56.0, 56.0, 56.0], ["亚洲（除中国）", "印度", "India", "Aditya Birla", "Renukoot", 41, 41.3529, 37.1243, 39.9244, 40.703, 41.5, 40.9986, 41.5, 41.5, 41.5, 41.5, 41.5], ["亚洲（除中国）", "印度", "India", "Aditya Birla", "Hirakud", 13.5, 17.5, 14.7989, 16.4537, 17.1945, 16.5, 17.1989, 18.0, 18.0, 18.0, 18.0, 18.0], ["亚洲（除中国）", "印度", "India", "Aditya Birla", "Mahan", 36, 36.0, 36.0, 36.0, 36.8753, 36.6233, 36.5, 36.5, 36.5, 36.5, 36.5, 36.5], ["亚洲（除中国）", "印度", "India", "Aditya Birla", "Aditya", 36, 36.0, 36.0, 36.0, 37.1778, 38.0748, 38.7541, 36, 36, 45, 54, 54], ["亚洲（除中国）", "越南", "Viet Nam", "Tran Hong Quan Trading Co.", "Dak Nong", 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 10, 15, 30, 30], ["亚洲（除中国）", "印度尼西亚", "Indonesia", "Inalum", "Kuala Tanjung", 25, 25.0252, 24.5, 24.3, 22.3808, 23.0137, 27.414, 27.5, 30, 30, 30, 40], ["亚洲（除中国）", "印度尼西亚", "Indonesia", "Tsingshan and Huafo", "Huachin", 25, 0.0, 0.0, 0.0, 0.0, 14.3, 26.211, 45, 50, 50, 50, 50], ["亚洲（除中国）", "印度尼西亚", "Indonesia", "阿达罗能源", "Kaltara", 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4, 30, 50, 75, 75], ["亚洲（除中国）", "印度尼西亚", "Indonesia", "南山集团", "Bintan", 100, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 10, 25, 40], ["亚洲（除中国）", "印度尼西亚", "Indonesia", "青山、信发", "大K岛", 120, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 30, 60, 90, 120], ["亚洲（除中国）", "印度尼西亚", "Indonesia", "青山、信发", "Juwan", 50, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 5, 25, 50, 50, 50], ["亚洲（除中国）", "印度尼西亚", "Indonesia", "青山", "小K维达贝铝业", 40, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 30, 40, 40], ["亚洲（除中国）", "印度尼西亚", "Indonesia", "青山", "星辉铝业", 40, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0, 30, 40], ["亚洲（除中国）", "印度尼西亚", "Indonesia", "哈利达", "哈利达", 100, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 10, 40, 80], ["亚洲（除中国）", "马来西亚", "Malaysia", "Press Metal", "Mukah", 12, 12.0, 12.0, 12.0, 11.28, 11.4959, 11.5027, 11.5, 12, 12, 12, 12], ["亚洲（除中国）", "马来西亚", "Malaysia", "Press Metal", "Samalaju", 96, 65.0, 65.0, 65.0, 62.0, 60.9918, 61.0, 61, 64.0, 64.0, 64.0, 64.0], ["亚洲（除中国）", "卡特尔", "Qatar", "Hydro(50%),Qatar Petroleum(50%)", "Qatalum", 63, 62.8, 63.2, 63.4, 63.8, 64.4, 65.0, 64.5, 35, 64.5, 64.5, 64.5], ["亚洲（除中国）", "沙特阿拉伯", "Saudi Arabia", "Ma'aden(74.9%),Alcoa(25.1%)", "Ma'aden", 75.8, 77.55, 77.7257, 80.4262, 80.5, 74.4718, 79.8003, 80.5, 80.5, 90.0, 90.0, 90.0], ["亚洲（除中国）", "沙特阿拉伯", "Saudi Arabia", "创新集团", "Red Sea", 100, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 25, 50, 50], ["亚洲（除中国）", "塔吉克斯坦", "Tajikistan", "Tajik Aluminum Company", "Tursunzade", 51.7, 10.08, 8.5027, 9.0, 6.7315, 4.5, 4.5, 5.0, 5.0, 5.0, 5.0, 5.0], ["亚洲（除中国）", "哈萨克斯坦", "Kazakhstan", "Eurasian Resources Group", "Pavlodar", 25.5, 26.3126, 26.5174, 25.7073, 24.9128, 26.0843, 26.4577, 26.5, 26.5, 26.5, 26.5, 26.5], ["亚洲（除中国）", "阿塞拜疆", "Azerbaijan", "Azeraluminium", "Ganja", 10, 4.86, 4.86, 4.86, 4.86, 5.14, 5.14, 6.49, 8.65, 9.19, 9.73, 9.73], ["亚洲（除中国）", "土耳其", "Turkey", "Eti Aluminum", "Seydisehir", 8.2, 7.5, 7.0, 7.5, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2], ["亚洲（除中国）", "阿曼", "Oman", "Rio Tinto(20%)", "Sohar", 40, 39.1, 39.7, 39.5, 39.5, 39.8, 39.9, 39.5, 39.5, 39.5, 39.5, 39.5], ["亚洲（除中国）", "伊朗", "Iran", "Almahdi Aluminium Co", "Hormozal", 14.7, 5.52, 8.78, 9.136, 9.324, 9.45, 9.45, 9.45, 8.9775, 9.45, 9.45, 9.45], ["亚洲（除中国）", "伊朗", "Iran", "Iralco", "Arak", 23, 17.63, 18.6, 17.8525, 17.353, 17.9225, 17.9225, 17.9225, 17.0263, 17.9225, 17.9225, 17.9225], ["亚洲（除中国）", "伊朗", "Iran", "Imidro(77.22%)", "Bandar Abbas", 11, 4.42, 6.45, 6.288, 6.288, 6.288, 6.288, 6.288, 5.9736, 6.288, 6.288, 6.288], ["亚洲（除中国）", "伊朗", "Iran", "South Aluminium Corporation", "Salco", 30, 0.0, 5.0, 15.435, 25.202, 27.975, 30.0, 30, 28.5, 30, 32, 35], ["亚洲（除中国）", "伊朗", "Iran", "Iran Alumina Company", "Jajarm", 3.6, 0.6, 2.23, 3.5886, 3.7, 3.7, 3.7, 3.7, 3.515, 3.7, 3.7, 3.7], ["亚洲（除中国）", "阿拉伯联合酋长国", "Uae", "Ega", "Al Taweelah", 150, 143.8956, 140.9863, 150.274, 155.0, 156.7438, 157.3757, 157.5, 60, 120, 157.5, 157.5], ["亚洲（除中国）", "阿拉伯联合酋长国", "Uae", "Ega", "Jebel Ali", 115, 113.9918, 106.2557, 101.9115, 110.0, 110.0, 111.1189, 110.0, 104.5, 110.0, 110.0, 110.0], ["南美洲", "巴西", "Brazil", "Norsk Hydro 51%,Nippon Amazon Aluminium Co. 49%", "Albras", 46, 32.7, 37.9, 42.7, 40.5, 45.0, 44.9, 46, 46, 46, 46, 46], ["南美洲", "阿根廷", "Argentina", "Aluar", "Puerto Madryn", 45.5, 42.8333, 30.5265, 33.8283, 40.8227, 44.2185, 44.2, 44.2, 46, 46, 46, 46], ["南美洲", "巴西", "Brazil", "CBA", "Aluminio", 37.5, 32.3455, 30.6243, 34.4986, 34.6553, 33.0082, 36.4281, 37.0, 37.0, 42.011, 43, 43], ["南美洲", "巴西", "Brazil", "Alcoa(60%),South 32 (40%)", "Alumar (Sao Luis)", 44.7, 0.0, 0.0, 0.0, 5.95, 23.8, 29.5, 39.1501, 44.7, 44.7, 44.7, 44.7], ["南美洲", "哥伦比亚", "Colombia", "EGA，NEO Aluminio Colombia", "Galtco", 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0, 27, 54], ["南美洲", "委内瑞拉", "Venezuela", "CVG", "Alcasa", 17, 0.1233, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0], ["南美洲", "委内瑞拉", "Venezuela", "CVG 80%,Kobe Steel 4%,Japanese Interests 16%", "Venalum", 44, 1.8493, 1.3825, 3.8343, 8.9507, 6.9945, 7.3757, 8.0, 8.0, 8.0, 8.0, 8.0], ["合计", "", "", "", "", 4083.2, 2780.1437, 2784.0933, 2864.3008, 2808.9826, 2849.3041, 2913.6561, 3012.6081, 2910.6054, 3294.099, 3628.1281, 3764.1281], ["同比", "", "", "", "", "", -0.3191, 0.0014, 0.0288, -0.0193, 0.0144, 0.0226, 0.034, -0.0339, 0.1318, 0.1014, 0.0375]];
+const TG = [{"type": "row", "data": ["非洲", "南非共和国", "South Africa", "South32", "Hillside", 72, 71.7, 71.7, 71.4, 71.8, 71.6, 72.3, 72.4033, 72.8, 72.8, 72.8, 72.8]}, {"type": "row", "data": ["非洲", "埃及", "Egypt", "Egyptalum", "Nag Hammadi", 32, 28.2384, 27.0, 29.0, 30.0, 29.9501, 29.2541, 30, 30, 30, 30, 30]}, {"type": "row", "data": ["非洲", "加纳", "Ghana", "Valco", "Valco", 20, 3.9033, 2.8716, 4.5052, 3.1247, 3.2521, 3.0, 3, 5.0, 5.0, 5.0, 5.0]}, {"type": "row", "data": ["非洲", "安哥拉", " Angola", "华通集团", "Bengo", 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 12, 20, 36, 36]}, {"type": "row", "data": ["非洲", "喀麦隆共和国", "Cameroon", "Alucam", "Edea", 10, 3.8671, 2.2481, 2.0, 2.0, 2.8277, 3.5, 3.5, 3.5, 4.0, 4.0, 4.0]}, {"type": "subtotal", "region": "非洲", "incs": [0.85, 15.25, 23.75, 39.75, 39.75]}, {"type": "row", "data": ["大洋洲", "澳大利亚", "Australia", "Rio Tinto(52%)", "Tomago", 60, 58.8, 59.2, 59.2, 58.6, 58.9, 58.7, 59, 59, 59, 59, 59]}, {"type": "row", "data": ["大洋洲", "澳大利亚", "Australia", "Rio Tinto(59%)", "Boyne Island", 58.4, 49.9, 51.0, 50.2, 45.0, 49.6, 50.7, 51.5, 51.5, 51.5, 51.5, 51.5]}, {"type": "row", "data": ["大洋洲", "新西兰", "New Zealand", "Rio Tinto(79%)", "Tiwai Point", 36.5, 35.1, 33.3, 33.3, 33.6, 33.4, 29.0, 28.7479, 33.5, 33.5, 34, 34]}, {"type": "row", "data": ["大洋洲", "澳大利亚", "Australia", "Awac(55%)", "Portland", 35.8, 28.8911, 28.5773, 27.2893, 28.9115, 28.3729, 31.4391, 34, 34, 34, 34, 34]}, {"type": "row", "data": ["大洋洲", "澳大利亚", "Australia", "Rio Tinto", "Bell Bay", 20, 18.9, 19.2, 18.9, 18.5, 18.6, 18.7, 18.5, 18.5, 19, 19, 19]}, {"type": "subtotal", "region": "大洋洲", "incs": [3.66, 8.16, 8.46, 8.96, 8.96]}, {"type": "row", "data": ["北美洲", "加拿大", "Canada", "Rio Tinto(40%)", "Alouette", 63, 60.2, 62.3, 62.9, 62.8, 63.4, 63.2, 63.4, 63.5, 63.5, 63.5, 63.5]}, {"type": "row", "data": ["北美洲", "加拿大", "Canada", "Rio Tinto", "Alma", 48, 47.2, 47.3, 47.1, 48.2, 48.4, 48.3, 48.4, 48.5, 48.5, 48.5, 48.5]}, {"type": "row", "data": ["北美洲", "加拿大", "Canada", "Rio Tinto", "Arvida AP60", 6, 6.0, 6.0, 6.0, 5.8, 5.9, 6.1, 7.0082, 17.7753, 22.0, 22.0, 22.0]}, {"type": "row", "data": ["北美洲", "加拿大", "Canada", "Rio Tinto", "Grande Baie", 25, 23.3, 22.5, 23.0, 23.2, 22.9, 22.9, 23.5, 23.5, 23.5, 23.5, 23.5]}, {"type": "row", "data": ["北美洲", "加拿大", "Canada", "Rio Tinto", "Kitimat", 43.7, 38.5, 32.9, 26.3, 14.5, 37.7, 41.9, 43.5, 43.5, 43.5, 43.5, 43.5]}, {"type": "row", "data": ["北美洲", "加拿大", "Canada", "Alcoa", "Baie-Comeau North", 31.2, 30.5321, 30.877, 31.4252, 31.4219, 32.1008, 32.0995, 32.4, 32.4, 32.4, 32.4, 32.4]}, {"type": "row", "data": ["北美洲", "美国", "United States", "Alcoa", "Warrick", 26.9, 16.1, 15.5219, 16.1, 13.3778, 11.0277, 15.1795, 16.0, 16.0, 16.0, 16.0, 16.0]}, {"type": "row", "data": ["北美洲", "美国", "United States", "Alcoa", "Massena West", 13, 14.0701, 13.8743, 13.0, 13.6981, 14.0, 12.9254, 13, 13, 13, 13, 13]}, {"type": "row", "data": ["北美洲", "美国", "United States", "Century Aluminum", "Mount Holly", 22.9, 11.4496, 10.6503, 8.8, 14.7658, 16.6, 16.5, 17.3, 20, 22.9, 22.9, 22.9]}, {"type": "row", "data": ["北美洲", "美国", "United States", "Century Aluminum", "Sebree", 22, 21.8878, 20.4448, 20.9, 21.6, 21.4, 21.6, 22.0, 22.0, 22.0, 22.0, 22.0]}, {"type": "row", "data": ["北美洲", "加拿大", "Canada", "Alcoa", "Deschambault", 28.7, 28.6753, 28.7638, 28.5748, 28.7748, 28.9279, 29.5027, 30, 30, 30, 30, 30]}, {"type": "row", "data": ["北美洲", "加拿大", "Canada", "Rio Tinto", "Laterriere", 26, 25.7, 25.0, 25.2, 25.3, 24.4, 25.2, 25.5, 25.5, 25.5, 25.5, 25.5]}, {"type": "subtotal", "region": "北美洲", "incs": [6.6, 20.27, 27.39, 27.39, 27.39]}, {"type": "row", "data": ["欧洲", "俄罗斯联邦", "Russia", "UC Rusal", "Bratsk", 101, 100.8, 100.4, 100.9, 100.5, 100.5, 100.2, 101, 101, 101, 101, 101]}, {"type": "row", "data": ["欧洲", "俄罗斯联邦", "Russia", "UC Rusal", "Sayanogorsk", 54.2, 53.9, 52.9, 53.6, 53.9, 53.8, 53.1, 54, 54, 54, 54, 54]}, {"type": "row", "data": ["欧洲", "俄罗斯联邦", "Russia", "UC Rusal", "Taishet Project", 42.8, 0.0, 0.0, 0.0, 7.8, 11.2, 28.8, 42, 43, 43, 43, 43]}, {"type": "row", "data": ["欧洲", "俄罗斯联邦", "Russia", "UC Rusal", "Irkutsk", 42.2, 42.2, 42.2, 42.4, 42.4, 42.5, 42.3, 42.5, 42.5, 42.5, 42.5, 42.5]}, {"type": "row", "data": ["欧洲", "俄罗斯联邦", "Russia", "UC Rusal", "Novokuznetsk", 21.5, 21.5, 21.5, 21.5, 21.3, 20.4, 19.6, 21, 21, 21, 21, 21]}, {"type": "row", "data": ["欧洲", "俄罗斯联邦", "Russia", "UC Rusal", "Kandalaksha", 7.6, 7.2, 7.0, 6.3, 6.4, 5.7, 5.4, 6.5, 6.5, 6.5, 6.5, 6.5]}, {"type": "row", "data": ["欧洲", "法国", "France", "Trimet Aluminium Ag", "St-Jean-De-Maurienne", 14.5, 13.9617, 14.5, 14.2479, 13.05, 13.0, 13.0, 14.1301, 14.5, 14.5, 14.5, 14.5]}, {"type": "row", "data": ["欧洲", "德国", "Germany", "Trimet Aluminium Ag", "Essen", 16.5, 15.874, 14.9216, 15.5071, 7.9825, 4.8331, 5.6044, 7, 13, 13, 16.0, 16.0]}, {"type": "row", "data": ["欧洲", "德国", "Germany", "Trimet Aluminium Ag", "Hamburg", 13.5, 12.2493, 13.5, 13.0414, 8.7695, 5.5078, 5.7393, 7, 10, 12, 13.5, 13.5]}, {"type": "row", "data": ["欧洲", "德国", "Germany", "Trimet Aluminium Ag", "Voerde", 9.5, 9.6, 9.5, 9.626, 5.8922, 2.8576, 3.5664, 4, 7, 9.5, 9.5, 9.5]}, {"type": "row", "data": ["欧洲", "希腊", "Greece", "Aluminium Of Greece", "Distomon", 18.5, 18.3488, 18.2, 18.3638, 18.714, 18.3362, 18.25, 18.5, 18.5, 18.5, 18.5, 18.5]}, {"type": "row", "data": ["欧洲", "冰岛", "Iceland", "Alcoa", "Fjardaal", 37, 29.6247, 27.7459, 25.754, 25.0, 29.18, 33.0, 33, 33, 33, 33, 34]}, {"type": "row", "data": ["欧洲", "冰岛", "Iceland", "Century Aluminum", "Grundartangi", 31.7, 31.5938, 31.3, 31.5, 30.6301, 31.0, 30.9, 28, 17, 28, 32.5, 32.5]}, {"type": "row", "data": ["欧洲", "冰岛", "Iceland", "Rio Tinto", "Straumsvik", 21, 18.4, 18.3, 20.3, 20.2, 20.9, 20.2, 21.2, 21.2, 21.2, 21.2, 21.2]}, {"type": "row", "data": ["欧洲", "挪威", "Norway", "Hydro", "Sunndalsora", 42.5, 40.3, 40.9, 42.3, 42.6, 42.8, 42.7, 43, 45.0, 45.0, 45.0, 45.0]}, {"type": "row", "data": ["欧洲", "挪威", "Norway", "Hydro", "Karmoy", 27.4, 25.7, 26.8, 26.6, 24.7, 20.8, 20.6, 25.3904, 26.5, 26.5, 26.5, 26.5]}, {"type": "row", "data": ["欧洲", "挪威", "Norway", "Hydro", "Husnes", 19.9, 9.5, 9.4, 16.9, 18.6, 15.0, 15.4, 18.7534, 19.5, 19.5, 19.5, 19.5]}, {"type": "row", "data": ["欧洲", "挪威", "Norway", "Alcoa", "Lista", 9.5, 5.7227, 6.5719, 7.2534, 5.4959, 4.5041, 5.0, 6, 9, 9.5, 9.5, 9.5]}, {"type": "row", "data": ["欧洲", "挪威", "Norway", "Alcoa", "Mosjoen", 20, 14.2474, 13.826, 14.126, 15.2466, 18.0082, 20.373, 20.0, 20.0, 21.4, 21.4, 21.4]}, {"type": "row", "data": ["欧洲", "罗马尼亚", "Romania", "Vimetco N.V.(54.19)", "Slatina", 26.5, 28.0248, 19.2428, 20.1474, 7.8568, 6.5058, 6.729, 6.5, 7, 10, 26.5, 26.5]}, {"type": "row", "data": ["欧洲", "西班牙", "Spain", "Alcoa", "San Ciprian", 22.8, 22.6522, 22.2547, 19.2778, 0.2466, 0.0, 1.3003, 5, 13, 18, 22, 22]}, {"type": "row", "data": ["欧洲", "瑞典", "Sweden", "Uc Rusal", "Sundsvall", 12.8, 12.0, 11.7, 12.4, 12.0, 11.9, 10.9, 12, 12.5, 12.5, 12.5, 12.5]}, {"type": "row", "data": ["欧洲", "英国", "Uk", "Liberty House Group(100%)", "Lochaber", 4.9, 4.6507, 3.7171, 4.0, 3.165, 3.0, 3.2011, 3.8, 4.0, 4.0, 4.0, 4.0]}, {"type": "subtotal", "region": "欧洲", "incs": [37.91, 67.11, 81.14, 107.74, 108.74]}, {"type": "row", "data": ["亚洲（除中国）", "巴林", "Bahrain", "Alba", "Alba", 155, 136.5005, 154.85, 156.1222, 160.0111, 162.0665, 162.2261, 163.5, 100, 140, 164.5, 164.5]}, {"type": "row", "data": ["亚洲（除中国）", "印度", "India", "Vedanta", "Jharsuguda", 175, 135.01, 134.3115, 164.624, 171.808, 176.2, 182.646, 183.9377, 183.9377, 183.9377, 183.9377, 183.9377]}, {"type": "row", "data": ["亚洲（除中国）", "印度", "India", "Vedanta(51%),State(49%)", "Korba", 59.4, 56.33, 56.9492, 58.0422, 56.926, 58.4, 58.9514, 75, 70, 95, 101.5, 101.5]}, {"type": "row", "data": ["亚洲（除中国）", "印度", "India", "Nalco", "Angul", 46, 42.4877, 43.2596, 45.5922, 46.0427, 46.4959, 46.2378, 46.5, 46.5, 56.0, 56.0, 56.0]}, {"type": "row", "data": ["亚洲（除中国）", "印度", "India", "Aditya Birla", "Renukoot", 41, 41.3529, 37.1243, 39.9244, 40.703, 41.5, 40.9986, 41.5, 41.5, 41.5, 41.5, 41.5]}, {"type": "row", "data": ["亚洲（除中国）", "印度", "India", "Aditya Birla", "Hirakud", 13.5, 17.5, 14.7989, 16.4537, 17.1945, 16.5, 17.1989, 18.0, 18.0, 18.0, 18.0, 18.0]}, {"type": "row", "data": ["亚洲（除中国）", "印度", "India", "Aditya Birla", "Aditya", 36, 36.0, 36.0, 36.0, 37.1778, 38.0748, 38.7541, 36, 36, 45, 54, 54]}, {"type": "row", "data": ["亚洲（除中国）", "越南", "Viet Nam", "Tran Hong Quan Trading Co.", "Dak Nong", 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 10, 15, 30, 30]}, {"type": "row", "data": ["亚洲（除中国）", "印度尼西亚", "Indonesia", "Inalum", "Kuala Tanjung", 25, 25.0252, 24.5, 24.3, 22.3808, 23.0137, 27.414, 27.5, 30, 30, 30, 40]}, {"type": "row", "data": ["亚洲（除中国）", "印度尼西亚", "Indonesia", "Tsingshan and Huafo", "Huachin", 25, 0.0, 0.0, 0.0, 0.0, 14.3, 26.211, 45, 50, 50, 50, 50]}, {"type": "row", "data": ["亚洲（除中国）", "印度尼西亚", "Indonesia", "阿达罗能源", "Kaltara", 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4, 30, 50, 75, 75]}, {"type": "row", "data": ["亚洲（除中国）", "印度尼西亚", "Indonesia", "南山集团", "Bintan", 100, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 10, 25, 40]}, {"type": "row", "data": ["亚洲（除中国）", "印度尼西亚", "Indonesia", "青山、信发", "大K岛", 120, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 30, 60, 90, 120]}, {"type": "row", "data": ["亚洲（除中国）", "印度尼西亚", "Indonesia", "青山、信发", "Juwan", 50, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 5, 25, 50, 50, 50]}, {"type": "row", "data": ["亚洲（除中国）", "印度尼西亚", "Indonesia", "青山", "小K维达贝铝业", 40, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 30, 40, 40]}, {"type": "row", "data": ["亚洲（除中国）", "印度尼西亚", "Indonesia", "青山", "星辉铝业", 40, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0, 30, 40]}, {"type": "row", "data": ["亚洲（除中国）", "印度尼西亚", "Indonesia", "哈利达", "哈利达", 100, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 10, 40, 80]}, {"type": "row", "data": ["亚洲（除中国）", "马来西亚", "Malaysia", "Press Metal", "Mukah", 12, 12.0, 12.0, 12.0, 11.28, 11.4959, 11.5027, 11.5, 12, 12, 12, 12]}, {"type": "row", "data": ["亚洲（除中国）", "马来西亚", "Malaysia", "Press Metal", "Samalaju", 96, 65.0, 65.0, 65.0, 62.0, 60.9918, 61.0, 61, 64.0, 64.0, 64.0, 64.0]}, {"type": "row", "data": ["亚洲（除中国）", "沙特阿拉伯", "Saudi Arabia", "Ma'aden(74.9%),Alcoa(25.1%)", "Ma'aden", 75.8, 77.55, 77.7257, 80.4262, 80.5, 74.4718, 79.8003, 80.5, 80.5, 90.0, 90.0, 90.0]}, {"type": "row", "data": ["亚洲（除中国）", "沙特阿拉伯", "Saudi Arabia", "创新集团", "Red Sea", 100, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 25, 50, 50]}, {"type": "row", "data": ["亚洲（除中国）", "塔吉克斯坦", "Tajikistan", "Tajik Aluminum Company", "Tursunzade", 51.7, 10.08, 8.5027, 9.0, 6.7315, 4.5, 4.5, 5.0, 5.0, 5.0, 5.0, 5.0]}, {"type": "row", "data": ["亚洲（除中国）", "哈萨克斯坦", "Kazakhstan", "Eurasian Resources Group", "Pavlodar", 25.5, 26.3126, 26.5174, 25.7073, 24.9128, 26.0843, 26.4577, 26.5, 26.5, 26.5, 26.5, 26.5]}, {"type": "row", "data": ["亚洲（除中国）", "阿塞拜疆", "Azerbaijan", "Azeraluminium", "Ganja", 10, 4.86, 4.86, 4.86, 4.86, 5.14, 5.14, 6.49, 8.65, 9.19, 9.73, 9.73]}, {"type": "row", "data": ["亚洲（除中国）", "伊朗", "Iran", "South Aluminium Corporation", "Salco", 30, 0.0, 5.0, 15.435, 25.202, 27.975, 30.0, 30, 28.5, 30, 32, 35]}, {"type": "row", "data": ["亚洲（除中国）", "阿拉伯联合酋长国", "Uae", "Ega", "Al Taweelah", 150, 143.8956, 140.9863, 150.274, 155.0, 156.7438, 157.3757, 157.5, 60, 120, 157.5, 157.5]}, {"type": "subtotal", "region": "亚洲（除中国）", "incs": [50.77, 143.53, 349.32, 549.75, 657.75]}, {"type": "row", "data": ["南美洲", "巴西", "Brazil", "Norsk Hydro 51%,Nippon Amazon Aluminium Co. 49%", "Albras", 46, 32.7, 37.9, 42.7, 40.5, 45.0, 44.9, 46, 46, 46, 46, 46]}, {"type": "row", "data": ["南美洲", "阿根廷", "Argentina", "Aluar", "Puerto Madryn", 45.5, 42.8333, 30.5265, 33.8283, 40.8227, 44.2185, 44.2, 44.2, 46, 46, 46, 46]}, {"type": "row", "data": ["南美洲", "巴西", "Brazil", "CBA", "Aluminio", 37.5, 32.3455, 30.6243, 34.4986, 34.6553, 33.0082, 36.4281, 37.0, 37.0, 42.011, 43, 43]}, {"type": "row", "data": ["南美洲", "巴西", "Brazil", "Alcoa(60%),South 32 (40%)", "Alumar (Sao Luis)", 44.7, 0.0, 0.0, 0.0, 5.95, 23.8, 29.5, 39.1501, 44.7, 44.7, 44.7, 44.7]}, {"type": "row", "data": ["南美洲", "哥伦比亚", "Colombia", "EGA，NEO Aluminio Colombia", "Galtco", 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0, 27, 54]}, {"type": "row", "data": ["南美洲", "委内瑞拉", "Venezuela", "CVG 80%,Kobe Steel 4%,Japanese Interests 16%", "Venalum", 44, 1.8493, 1.3825, 3.8343, 8.9507, 6.9945, 7.3757, 8.0, 8.0, 8.0, 8.0, 8.0]}, {"type": "subtotal", "region": "南美洲", "incs": [11.95, 19.3, 24.31, 52.3, 79.3]}, {"type": "total", "incs": [111.74, 273.61, 514.36, 785.89, 921.89]}];
+const TB = [["", 2019.0, 2020.0, 2021.0, 2022.0, 2023.0, 2024.0, 2025.0, 2026.0, 2027.0, 2028.0], ["海外电解铝供给", 2780.1437, 2784.0933, 2864.3008, 2808.9826, 2849.3041, 2913.6561, 3012.6081, 2910.6054, 3294.099, 3628.1281], ["yoy", "", 0.0014, 0.0288, -0.0193, 0.0144, 0.0226, 0.034, -0.0339, 0.1318, 0.1014], ["国内电解铝供给", 3512.96, 3712.4, 3849.2, 4007.29, 4151.3, 4312.0, 4392.0, 4490.0, 4511.3, 4511.3], ["yoy", "", 0.0568, 0.0368, 0.0411, 0.0359, 0.0387, 0.0186, 0.0223, 0.0047, 0.0], ["全球电解铝供给", 6293.1037, 6496.4933, 6713.5008, 6816.2726, 7000.6041, 7225.6561, 7404.6081, 7400.6054, 7805.399, 8139.4281], ["yoy", "", 0.0323, 0.0334, 0.0153, 0.027, 0.0321, 0.0248, -0.0005, 0.0547, 0.0428], ["全球电解铝需求", 6402.0703, 6222.4174, 6838.1672, 6860.3189, 6960.9299, 7220.0783, 7410.5202, 7492.5478, 7773.5674, 8065.4132], ["yoy", "", -0.0281, 0.099, 0.0032, 0.0147, 0.0372, 0.0264, 0.0111, 0.0375, 0.0375], ["平衡", -108.9666, 274.0759, -124.6664, -44.0463, 39.6742, 5.5777, -5.9121, -91.9424, 31.8316, 74.0149], ["LME铝价", 1812.0, 1731.0, 2486.0, 2713.0, 2288.0, 2457.0, 2583.0, 3200.0, 4000.0, ""]];
+
+function switchTab(id) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.querySelector('.tab-'+id).classList.add('active');
+}
+
+function fmt(v,dp=2) {
+  if (v===''||v===null||v===undefined) return '';
+  if (typeof v==='number') return v.toLocaleString('en-US',{maximumFractionDigits:dp,minimumFractionDigits:0});
+  return v;
+}
+function fmtPct(v) {
+  if (v===''||typeof v!=='number') return '';
+  return (v>=0?'+':'')+(v*100).toFixed(1)+'%';
+}
+
+// ─── Panel 1 ───
+function buildT1() {
+  const tbody=document.getElementById('t1-body');
+  const sel=document.getElementById('t1-region');
+  const regions=new Set(); let lastR='';
+
+  T1.forEach((row,i)=>{
+    if(i===0) return;
+    const region=row[0], country=row[1];
+    const isTotal=region==='合计', isYoy=region==='同比';
+    const isEmpty=row.every(v=>v==='');
+    if(region&&!isTotal&&!isYoy) regions.add(region);
+
+    const tr=document.createElement('tr');
+    tr.dataset.region=region||''; tr.dataset.country=country||'';
+    tr.dataset.group=row[3]||''; tr.dataset.abbr=row[4]||'';
+
+    if(isTotal) tr.className='row-total';
+    else if(isYoy) tr.className='row-yoy';
+    else if(isEmpty) tr.className='row-empty';
+    else if(region&&region!==lastR){tr.classList.add('region-start');lastR=region;}
+
+    if(isYoy){
+      tr.innerHTML=
+        `<td class="rc">同比</td><td></td><td></td><td></td><td></td><td></td>`+
+        [6,7,8,9,10,11,12,13,14,15,16].map(j=>{
+          const v=row[j]; const neg=typeof v==='number'&&v<0;
+          return `<td class="n pct${neg?' neg':''}">${fmtPct(v)}</td>`;
+        }).join('');
+    } else {
+      tr.innerHTML=
+        `<td class="rc">${fmt(region)}</td>`+
+        `<td>${fmt(country)}</td>`+
+        `<td style="font-size:11px;color:var(--text3)">${fmt(row[2])}</td>`+
+        `<td style="font-size:12px;color:var(--text2)">${fmt(row[3])}</td>`+
+        `<td style="font-weight:600">${fmt(row[4])}</td>`+
+        `<td class="n" style="color:var(--text)">${fmt(row[5])}</td>`+
+        [6,7,8,9,10,11].map(j=>`<td class="n">${fmt(row[j])}</td>`).join('')+
+        [12,13,14,15,16].map(j=>`<td class="n est">${fmt(row[j])}</td>`).join('');
+    }
+    tbody.appendChild(tr);
+  });
+
+  regions.forEach(r=>{const o=document.createElement('option');o.value=r;o.textContent=r;sel.appendChild(o);});
+  document.getElementById('t1-count').textContent=(T1.length-1)+' 行';
+}
+
+function filterT1(){
+  const q=document.getElementById('t1-search').value.toLowerCase();
+  const reg=document.getElementById('t1-region').value;
+  let vis=0;
+  document.querySelectorAll('#t1-body tr').forEach(tr=>{
+    if(tr.className==='row-empty'){tr.classList.remove('hidden');return;}
+    if(tr.classList.contains('row-total')||tr.classList.contains('row-yoy')){
+      tr.classList.toggle('hidden',!!(q||reg));return;
+    }
+    const mR=!reg||tr.dataset.region===reg;
+    const mQ=!q||[tr.dataset.country,tr.dataset.group,tr.dataset.abbr,tr.dataset.region].some(s=>s.toLowerCase().includes(q));
+    tr.classList.toggle('hidden',!(mR&&mQ));
+    if(mR&&mQ) vis++;
+  });
+  document.getElementById('t1-count').textContent=vis+' 行';
+}
+
+// ─── Panel 2 ───
+function buildTg(){
+  const tbody=document.getElementById('tg-body');
+  const sel=document.getElementById('tg-region');
+  const regions=new Set(); let lastR='';
+
+  TG.forEach(item=>{
+    if(item.type==='row'){
+      const row=item.data;
+      const region=row[0], country=row[1];
+      if(region) regions.add(region);
+      const v2024=row[11];
+
+      const tr=document.createElement('tr');
+      tr.dataset.region=region||''; tr.dataset.country=country||'';
+      tr.dataset.group=row[3]||''; tr.dataset.abbr=row[4]||'';
+      if(region&&region!==lastR){tr.classList.add('region-start');lastR=region;}
+
+      function estCell(v){
+        const grows=typeof v==='number'&&typeof v2024==='number'&&v>v2024;
+        return `<td class="n est${grows?' grow':''}">${fmt(v)}</td>`;
+      }
+
+      tr.innerHTML=
+        `<td class="rc">${fmt(region)}</td>`+
+        `<td>${fmt(country)}</td>`+
+        `<td style="font-size:11px;color:var(--text3)">${fmt(row[2])}</td>`+
+        `<td style="font-size:12px;color:var(--text2)">${fmt(row[3])}</td>`+
+        `<td style="font-weight:600">${fmt(row[4])}</td>`+
+        `<td class="n" style="color:var(--text)">${fmt(row[5])}</td>`+
+        [6,7,8,9,10,11].map(j=>`<td class="n">${fmt(row[j])}</td>`).join('')+
+        [12,13,14,15,16].map(j=>estCell(row[j])).join('');
+      tbody.appendChild(tr);
+
+    } else if(item.type==='subtotal'){
+      const tr=document.createElement('tr');
+      tr.className='row-subtotal';
+      tr.dataset.region=item.region; tr.dataset.subtype='subtotal';
+      tr.innerHTML=
+        `<td class="rc" style="color:var(--red-ll)">${item.region}</td>`+
+        `<td colspan="4" style="color:var(--red-ll);font-size:12px">净增量小计</td>`+
+        `<td></td>`+
+        `<td></td><td></td><td></td><td></td><td></td>`+
+        `<td class="n" style="color:var(--text3)">2024基准</td>`+
+        item.incs.map(v=>`<td class="n grow" style="font-size:13px">${fmt(v)}</td>`).join('');
+      tbody.appendChild(tr);
+
+    } else if(item.type==='total'){
+      const tr=document.createElement('tr');
+      tr.className='row-grandtotal';
+      tr.dataset.subtype='total';
+      tr.innerHTML=
+        `<td colspan="5" style="color:var(--gold-l);font-size:13px;letter-spacing:1px">▶ 全球净增量合计</td>`+
+        `<td></td>`+
+        `<td></td><td></td><td></td><td></td><td></td>`+
+        `<td class="n" style="color:var(--text3)">vs 2024</td>`+
+        item.incs.map(v=>`<td class="n" style="color:var(--gold-l);font-size:13px;font-family:Arial">${fmt(v)}</td>`).join('');
+      tbody.appendChild(tr);
+    }
+  });
+
+  regions.forEach(r=>{const o=document.createElement('option');o.value=r;o.textContent=r;sel.appendChild(o);});
+  const rowCount=TG.filter(i=>i.type==='row').length;
+  document.getElementById('tg-count').textContent=rowCount+' 行 (增量项目)';
+}
+
+function filterTg(){
+  const q=document.getElementById('tg-search').value.toLowerCase();
+  const reg=document.getElementById('tg-region').value;
+  let vis=0;
+  document.querySelectorAll('#tg-body tr').forEach(tr=>{
+    const sub=tr.dataset.subtype;
+    if(sub==='subtotal'){
+      tr.classList.toggle('hidden',!!(reg&&tr.dataset.region!==reg)||!!(q));return;
+    }
+    if(sub==='total'){tr.classList.toggle('hidden',!!(q||reg));return;}
+    const mR=!reg||tr.dataset.region===reg;
+    const mQ=!q||[tr.dataset.country,tr.dataset.group,tr.dataset.abbr,tr.dataset.region].some(s=>s.toLowerCase().includes(q));
+    tr.classList.toggle('hidden',!(mR&&mQ));
+    if(mR&&mQ) vis++;
+  });
+  document.getElementById('tg-count').textContent=vis+' 行 (增量项目)';
+}
+
+// ─── Panel 3 ───
+function buildTb(){
+  const tbody=document.getElementById('tb-body');
+  const rowClasses=['','tb-supply tb-yoy-dummy','tb-yoy','tb-domestic','tb-yoy','tb-global','tb-yoy','tb-demand','tb-yoy','tb-balance','tb-lme'];
+  const isYoyIdx=new Set([2,4,6,8]);
+  const isBalanceIdx=new Set([9]);
+
+  TB.forEach((row,i)=>{
+    if(i===0) return;
+    const tr=document.createElement('tr');
+    tr.className=rowClasses[i]||'';
+    const isYoy=isYoyIdx.has(i), isBal=isBalanceIdx.has(i);
+
+    let html=`<td style="font-weight:${isYoy?400:600}">${row[0]}</td>`;
+    for(let j=1;j<row.length;j++){
+      const v=row[j];
+      if(isYoy){
+        const neg=typeof v==='number'&&v<0;
+        html+=`<td class="n pct${neg?' neg':''}">${fmtPct(v)}</td>`;
+      } else if(isBal){
+        const neg=typeof v==='number'&&v<0;
+        html+=`<td class="n${neg?' neg':' pos'}" style="font-size:13px">${fmt(v)}</td>`;
+      } else {
+        html+=`<td class="n">${fmt(v)}</td>`;
+      }
+    }
+    tr.innerHTML=html;
+    tbody.appendChild(tr);
+  });
+}
+
+buildT1(); buildTg(); buildTb();
+</script>
+</body>
+</html>
