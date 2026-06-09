@@ -777,9 +777,11 @@ function buildTg() {
 
   // Group by region - include ALL projects (show both increment and decrement)
   const regions = {}, regionOrder = [];
+  let lastRegion = '';
   (T1 || []).slice(1).forEach(row => {
     if (!row[4]) return;
-    const r = row[0] || '其他';
+    if (row[0] && row[0].trim()) lastRegion = row[0].trim();
+    const r = lastRegion || '其他';
     if (!regions[r]) { regions[r] = []; regionOrder.push(r); }
     regions[r].push(row);
   });
