@@ -1,59 +1,50 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<style>/* ==PW-GATE-CSS== */
-#pw-gate{position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:#0a0e1a;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;}
-#pw-gate .pw-logo{font-size:22px;font-weight:700;color:#6aaee8;letter-spacing:3px;
-  font-family:'楷体','KaiTi','STKaiti',serif;}
-#pw-gate .pw-sub{font-size:12px;color:#2a4a6a;letter-spacing:1px;}
-#pw-gate .pw-box{background:#0d1626;border:1px solid #1a2e50;border-radius:10px;
-  padding:32px 40px;display:flex;flex-direction:column;align-items:center;gap:16px;
-  box-shadow:0 8px 40px rgba(0,0,0,.6);min-width:320px;}
-#pw-input{background:#091220;border:1px solid #1e3050;border-radius:6px;
-  color:#dce8f5;font-size:15px;padding:10px 18px;width:240px;outline:none;
+<style>/* ==PANEL-LOCK-CSS== */
+.panel{position:relative;}
+.panel-lock{position:absolute;top:0;left:0;right:0;bottom:0;z-index:500;
+  background:rgba(10,14,26,.97);display:flex;align-items:center;
+  justify-content:center;flex-direction:column;}
+.panel-lock.hidden{display:none!important;}
+.pl-box{background:#0d1626;border:1px solid #1a2e50;border-radius:10px;
+  padding:36px 44px;display:flex;flex-direction:column;align-items:center;
+  gap:18px;min-width:300px;box-shadow:0 8px 40px rgba(0,0,0,.6);}
+.pl-logo{font-size:16px;font-weight:700;color:#6aaee8;letter-spacing:2px;}
+.pl-sub{font-size:12px;color:#3a5a7a;text-align:center;line-height:1.7;}
+.pl-input{background:#091220;border:1px solid #1e3050;border-radius:6px;
+  color:#dce8f5;font-size:15px;padding:10px 18px;width:220px;outline:none;
   text-align:center;letter-spacing:2px;}
-#pw-input:focus{border-color:#6aaee8;box-shadow:0 0 0 2px rgba(106,174,232,.15);}
-#pw-btn{background:linear-gradient(135deg,#1a4a8a,#2a6aaa);border:none;
+.pl-input:focus{border-color:#6aaee8;}
+.pl-btn{background:linear-gradient(135deg,#1a4a8a,#2a6aaa);border:none;
   border-radius:6px;color:#dce8f5;cursor:pointer;font-size:14px;
-  padding:10px 0;width:240px;letter-spacing:1px;transition:opacity .15s;}
-#pw-btn:hover{opacity:.85;}
-#pw-err{color:#e06060;font-size:12px;min-height:14px;}
-body.locked{overflow:hidden;}
-/* ==/PW-GATE-CSS== */</style>
-<script>/* ==PW-GATE-JS== */
+  padding:10px 0;width:220px;letter-spacing:1px;transition:opacity .15s;}
+.pl-btn:hover{opacity:.85;}
+.pl-err{color:#e06060;font-size:12px;min-height:16px;}
+/* ==/PANEL-LOCK-CSS== */</style>
+<script>/* ==PANEL-LOCK-JS== */
 (function(){
   function h(s){let v=0;for(let i=0;i<s.length;i++)v=(Math.imul(31,v)+s.charCodeAt(i))|0;return v>>>0;}
   const TARGET=1241293660;
-  window._pwCheck=function(){
-    const v=document.getElementById('pw-input').value;
-    if(h(v)===TARGET){
-      document.getElementById('pw-gate').style.display='none';
-      document.body.classList.remove('locked');
-      sessionStorage.setItem('_auth','1');
-    }else{
-      const e=document.getElementById('pw-err');
-      e.textContent='密码错误，请重试';
-      document.getElementById('pw-input').value='';
-      document.getElementById('pw-input').focus();
-      setTimeout(function(){e.textContent='';},2000);
+  const LOCKED=['t1','tg'];
+  function unlockAll(){LOCKED.forEach(function(id){const l=document.getElementById('lock-'+id);if(l)l.classList.add('hidden');});}
+  window.addEventListener('DOMContentLoaded',function(){if(sessionStorage.getItem('_auth')==='1')unlockAll();});
+  window._panelUnlock=function(panelId){
+    const inp=document.getElementById('pl-input-'+panelId);
+    if(!inp)return;
+    if(h(inp.value)===TARGET){sessionStorage.setItem('_auth','1');unlockAll();}
+    else{
+      const e=document.getElementById('pl-err-'+panelId);
+      if(e){e.textContent='密码错误，请重试';setTimeout(function(){e.textContent='';},2000);}
+      inp.value='';inp.focus();
     }
   };
-  window.addEventListener('DOMContentLoaded',function(){
-    if(sessionStorage.getItem('_auth')==='1'){
-      const g=document.getElementById('pw-gate');
-      if(g)g.style.display='none';
-      return;
-    }
-    document.body.classList.add('locked');
-    const inp=document.getElementById('pw-input');
-    if(inp){
-      inp.focus();
-      inp.addEventListener('keydown',function(e){if(e.key==='Enter')window._pwCheck();});
-    }
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='Enter')return;
+    LOCKED.forEach(function(id){const inp=document.getElementById('pl-input-'+id);if(inp&&document.activeElement===inp)window._panelUnlock(id);});
   });
 })();
-/* ==/PW-GATE-JS== */</script>
+/* ==/PANEL-LOCK-JS== */</script>
 <script></script>
 <script></script>
 <script></script>
@@ -345,15 +336,6 @@ tr.tb-yoy td{font-style:italic;font-size:11px;color:var(--text3)!important;font-
 
 </head>
 <body>
-<!-- ==PW-GATE-HTML== --><div id="pw-gate">
-  <div class="pw-logo">HTSC METALS · 电解铝数据库</div>
-  <div class="pw-sub">华泰证券金属研究 · 内部使用</div>
-  <div class="pw-box">
-    <input id="pw-input" type="password" placeholder="请输入访问密码" autocomplete="off" />
-    <button id="pw-btn" onclick="window._pwCheck()">确认进入</button>
-    <span id="pw-err"></span>
-  </div>
-</div><!-- ==/PW-GATE-HTML== -->
 <div class="topbar">
   <div class="logo"><em>HTSC</em> METALS · 电解铝数据库</div>
   <div class="nav-tabs">
@@ -454,6 +436,15 @@ tr.tb-yoy td{font-style:italic;font-size:11px;color:var(--text3)!important;font-
 </div>
 <!-- panel-t1 -->
 <div class="panel" id="panel-t1">
+<div class="panel-lock" id="lock-t1">
+  <div class="pl-box">
+    <div class="pl-logo">🔒 海外供应明细</div>
+    <div class="pl-sub">此面板为内部限制内容<br>请输入访问密码</div>
+    <input class="pl-input" id="pl-input-t1" type="password" placeholder="请输入访问密码" autocomplete="off" />
+    <button class="pl-btn" onclick="window._panelUnlock('t1')">确认进入</button>
+    <span class="pl-err" id="pl-err-t1"></span>
+  </div>
+</div>
   <div class="ctrl-bar">
     <span class="ctrl-title">海外供应明细</span>
     <select id="t1-region" onchange="filterT1()">
@@ -491,6 +482,15 @@ tr.tb-yoy td{font-style:italic;font-size:11px;color:var(--text3)!important;font-
 </div>
 <!-- panel-tg -->
 <div class="panel" id="panel-tg">
+<div class="panel-lock" id="lock-tg">
+  <div class="pl-box">
+    <div class="pl-logo">🔒 海外增量项目</div>
+    <div class="pl-sub">此面板为内部限制内容<br>请输入访问密码</div>
+    <input class="pl-input" id="pl-input-tg" type="password" placeholder="请输入访问密码" autocomplete="off" />
+    <button class="pl-btn" onclick="window._panelUnlock('tg')">确认进入</button>
+    <span class="pl-err" id="pl-err-tg"></span>
+  </div>
+</div>
   <div class="ctrl-bar">
     <span class="ctrl-title">海外增量项目</span>
     <span class="stats" style="color:var(--text2);font-size:12px">
