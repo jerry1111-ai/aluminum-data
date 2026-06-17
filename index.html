@@ -1,14 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-
-
-<script></script>
-<script></script>
-<script></script>
-<script></script>
-<script></script>
-<script></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HTSC—METALS—电解铝数据库</title>
@@ -246,7 +238,6 @@ tr.tb-yoy td{font-style:italic;font-size:11px;color:var(--text3)!important;font-
 
 
 
-
 /* ===== 业绩弹性 panel ===== */
 .tab-el.active{color:#d4a4e8;border-bottom-color:#d4a4e8;}
 .tab-el.active .pip{background:#d4a4e8;}
@@ -313,8 +304,12 @@ tr.tb-yoy td{font-style:italic;font-size:11px;color:var(--text3)!important;font-
 /* ==/PANEL-LOCK-CSS== */</style>
 </head>
 <body>
+
+
+
+
 <div class="topbar">
-  <div class="logo"><em>HTSC</em> METALS · 电解铝数据库</div>
+  <div class="logo">HTSC METALS<em> 电解铝数据库</em></div>
   <div class="nav-tabs">
     <div class="nav-tab tab-kl active" onclick="switchTab('kl')"><span class="pip"></span>K线图</div>
     <div class="nav-tab tab-home" onclick="switchTab('home')"><span class="pip"></span>首页</div>
@@ -325,12 +320,12 @@ tr.tb-yoy td{font-style:italic;font-size:11px;color:var(--text3)!important;font-
     <div class="nav-tab tab-t1" onclick="switchTab('t1')"><span class="pip"></span>海外供应明细</div>
     <div class="nav-tab tab-tg" onclick="switchTab('tg')"><span class="pip"></span>海外增量项目</div>
     <div class="nav-tab tab-tb" onclick="switchTab('tb')"><span class="pip"></span>海外电解铝平衡表</div>
-    <div class="nav-tab tab-cc" onclick="switchTab('cc')"><span class="pip"></span>成本曲线
+    <div class="nav-tab tab-el" onclick="switchTab('el')"><span class="pip"></span>业绩弹性</div>
     <div class="nav-tab tab-cc" onclick="switchTab('cc')"><span class="pip"></span>成本曲线</div>
     <div class="nav-tab tab-tech" onclick="switchTab('tech')"><span class="pip"></span>技术指标</div>
   </div>
-  </div>
 </div>
+<!-- Panel<!-- Panel 1 -->
 <!-- HOME panel -->
 <div class="panel" id="panel-home">
   <div style="padding:40px 48px;max-width:900px;margin:0 auto;">
@@ -481,13 +476,35 @@ tr.tb-yoy td{font-style:italic;font-size:11px;color:var(--text3)!important;font-
 </div>
   <div class="ctrl-bar">
     <span class="ctrl-title">海外增量项目</span>
-    <span class="stats" style="color:var(--text2);font-size:12px">
-      共 <b id="tg-count" style="color:var(--acc-ll)">…</b> 个项目（含增量<span style="color:#e8c060">▲</span>和减量<span style="color:#e06060">▼</span>）
-    </span>
+    <select id="tg-region" onchange="filterTg()">
+      <option value="">全部地区</option>
+    </select>
+    <input type="text" id="tg-search" placeholder="搜索国家 / 集团 / 项目…" oninput="filterTg()" />
+    <span class="stats">显示 <b id="tg-count">…</b></span>
   </div>
   <div class="tw">
-    <table class="t1-th sc">
-      <thead id="tg-head"></thead>
+    <table class="tg-th sc">
+      <thead>
+        <tr>
+          <th>地区</th>
+          <th>国家</th>
+          <th class="nh">英文</th>
+          <th>所属集团</th>
+          <th>简称</th>
+          <th class="nh">建成产能<br>（万吨）</th>
+          <th class="nh">2019</th>
+          <th class="nh">2020</th>
+          <th class="nh">2021</th>
+          <th class="nh">2022</th>
+          <th class="nh">2023</th>
+          <th class="nh">2024</th>
+          <th class="nh" style="color:var(--text2)">2025</th>
+          <th class="nh" style="color:var(--acc-ll)">2026E</th>
+          <th class="nh" style="color:var(--acc-ll)">2027E</th>
+          <th class="nh" style="color:var(--acc-ll)">2028E</th>
+          <th class="nh" style="color:var(--acc-ll)">2029E</th>
+        </tr>
+      </thead>
       <tbody id="tg-body"></tbody>
     </table>
   </div>
@@ -582,23 +599,13 @@ const CHART_DEFS_HF = [
   {section:'进出口利润', sectionClass:'red', charts:[
     {title:'铝锭进口利润', key:'铝锭进口利润', unit:'元/吨'},
     {title:'铝锭出口利润', key:'铝锭出口利润', unit:'美元/吨'},
-  ]},
-  {section:'国内电解铝利润', sectionClass:'green', charts:[
     {title:'电解铝成本利润', key:'电解铝成本利润', unit:'元/吨'},
-  ]},
-  {section:'精废价差', sectionClass:'gold', charts:[
-    {title:'破碎生铝精废价差（佛山）', key:'破碎铝精废价差', unit:'元/吨'},
-    {title:'型材铝精废价差（佛山）', key:'型材铝精废价差', unit:'元/吨'},
   ]},
 ];
 
 let builtT1=false,builtTg=false,builtTb=false;
 let builtCh=false,builtHf=false,builtDom=false,builtDbal=false;
 function switchTab(id){
-  if(id==='cc'&&!builtCc){buildCostCurve();}
-  if(id==='kl'&&!builtKl){buildKline();}
-  if(id==='tech'&&!techBuilt){buildTech();}
-  if(id==='el'){elInitAll();}  // el init
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('panel-'+id).classList.add('active');
@@ -610,6 +617,10 @@ function switchTab(id){
   if(id==='t1'&&!builtT1){buildT1();builtT1=true;}
   if(id==='tg'&&!builtTg){buildTg();builtTg=true;}
   if(id==='tb'&&!builtTb){buildTb();builtTb=true;}
+  if(id==='cc'&&!builtCc){buildCostCurve();}
+  if(id==='kl'&&!builtKl){buildKline();}
+  if(id==='tech'&&!techBuilt){buildTech();}
+  if(id==='el'){elInitAll();}
 }
 
 // ── Helpers ──
@@ -758,134 +769,50 @@ function filterT1(){
 }
 
 // ── Panel 2 ──
-function buildTg() {
-  if (builtTg) return;
-  builtTg = true;
-
-  // T1[i] = [地区,国家,英文,集团,简称,产能, 2019..2024, 2025, 2026E,2027E,2028E,2029E]
-  // col:    0    1    2   3   4   5   6..11  12   13    14    15    16
-  const COL_LABELS = ['地区','国家','英文','所属集团','简称','产能(万吨)',
-    '2019','2020','2021','2022','2023','2024','2025',
-    '2026E','2027E','2028E','2029E'];
-
-  // Group by region - include ALL projects (show both increment and decrement)
-  const regions = {}, regionOrder = [];
-  let lastRegion = '';
-  (T1 || []).slice(1).forEach(row => {
-    if (!row[4]) return;
-    if (row[0] && row[0].trim()) lastRegion = row[0].trim();
-    const r = lastRegion || '其他';
-    if (!regions[r]) { regions[r] = []; regionOrder.push(r); }
-    regions[r].push(row);
+function buildTg(){
+  const tbody=document.getElementById('tg-body');
+  const sel=document.getElementById('tg-region');
+  const regions=new Set();let lastR='';
+  TG.forEach(item=>{
+    if(item.type==='row'){
+      const row=item.data;const region=row[0];
+      if(region)regions.add(region);
+      const v2024=row[11];
+      const tr=document.createElement('tr');
+      tr.dataset.region=region||'';tr.dataset.country=row[1]||'';
+      tr.dataset.group=row[3]||'';tr.dataset.abbr=row[4]||'';
+      if(region&&region!==lastR){tr.classList.add('region-start');lastR=region;}
+      function ec(v){const g=typeof v==='number'&&typeof v2024==='number'&&v>v2024;return`<td class="n est${g?' grow':''}">${fmt(v)}</td>`;}
+      tr.innerHTML=`<td class="rc">${fmt(region)}</td><td>${fmt(row[1])}</td>`+
+        `<td style="font-size:11px;color:var(--text3)">${fmt(row[2])}</td>`+
+        `<td style="font-size:12px;color:var(--text2)">${fmt(row[3])}</td>`+
+        `<td style="font-weight:600">${fmt(row[4])}</td>`+
+        `<td class="n" style="color:var(--text)">${fmt(row[5])}</td>`+
+        [6,7,8,9,10,11].map(j=>`<td class="n">${fmt(row[j])}</td>`).join('')+
+        `<td class="n est">${fmt(row[12])}</td>`+
+        [13,14,15,16].map(j=>ec(row[j])).join('');
+      tbody.appendChild(tr);
+    }else if(item.type==='subtotal'){
+      const tr=document.createElement('tr');tr.className='row-subtotal';
+      tr.dataset.region=item.region;tr.dataset.subtype='subtotal';
+      tr.innerHTML=`<td class="rc" style="color:var(--red-ll)">${item.region}</td>`+
+        `<td colspan="4" style="color:var(--red-ll);font-size:12px">净增量小计</td><td></td>`+
+        `<td></td><td></td><td></td><td></td><td></td>`+
+        `<td class="n" style="color:var(--text3)">2024基准</td>`+
+        item.incs.map(v=>`<td class="n grow" style="font-size:13px">${fmt(v)}</td>`).join('');
+      tbody.appendChild(tr);
+    }else if(item.type==='total'){
+      const tr=document.createElement('tr');tr.className='row-grandtotal';tr.dataset.subtype='total';
+      tr.innerHTML=`<td colspan="5" style="color:var(--gold-l);font-size:13px;letter-spacing:1px">▶ 全球净增量合计</td><td></td>`+
+        `<td></td><td></td><td></td><td></td><td></td>`+
+        `<td class="n" style="color:var(--text3)">vs 2024</td>`+
+        item.incs.map(v=>`<td class="n" style="color:var(--gold-l);font-size:13px;font-family:Arial">${fmt(v)}</td>`).join('');
+      tbody.appendChild(tr);
+    }
   });
-
-  // Compute per-region YoY increments (sum of positive deltas) for cols 13-16
-  function calcIncs(rows) {
-    const incs = {13:0,14:0,15:0,16:0};
-    rows.forEach(row => {
-      for (let ci = 13; ci <= 16; ci++) {
-        const cur = row[ci], prev = row[ci-1];
-        if (cur != null && prev != null) incs[ci] += (cur - prev);
-      }
-    });
-    [13,14,15,16].forEach(ci => { incs[ci] = Math.round(incs[ci]*100)/100; });
-    return incs;
-  }
-
-  const thead = document.getElementById('tg-head');
-  const tbody = document.getElementById('tg-body');
-  if (!thead || !tbody) return;
-
-  // Header
-  thead.innerHTML = `<tr>
-    <th>地区</th><th>国家</th><th class="nh">英文</th><th>所属集团</th><th>简称</th>
-    <th class="nh">产能</th>
-    <th class="nh">2019</th><th class="nh">2020</th><th class="nh">2021</th>
-    <th class="nh">2022</th><th class="nh">2023</th><th class="nh">2024</th>
-    <th class="nh" style="color:var(--text2)">2025</th>
-    <th class="nh" style="color:var(--acc-ll)">2026E</th>
-    <th class="nh" style="color:var(--acc-ll)">2027E</th>
-    <th class="nh" style="color:var(--acc-ll)">2028E</th>
-    <th class="nh" style="color:var(--acc-ll)">2029E</th>
-    <th class="nh" style="color:#e8c060;border-left:2px solid var(--border2)" title="YoY增量">△26E</th>
-    <th class="nh" style="color:#e8c060" title="YoY增量">△27E</th>
-    <th class="nh" style="color:#e8c060" title="YoY增量">△28E</th>
-    <th class="nh" style="color:#e8c060" title="YoY增量">△29E</th>
-  </tr>`;
-
-  function fv(v) {
-    if (v == null || v === '') return '<td class="nh">—</td>';
-    return `<td class="nh">${parseFloat(v).toFixed(1)}</td>`;
-  }
-  function fiRow(cur, prev, extra) {
-    const s = extra ? ';'+extra : '';
-    if (cur == null || prev == null) return `<td class="nh" style="color:var(--text3)${s}">—</td>`;
-    const d = cur - prev;
-    if (Math.abs(d) < 0.05) return `<td class="nh" style="color:var(--text3)${s}">—</td>`;
-    if (d > 0) return `<td class="nh" style="color:#e8c060;font-weight:600${s}">+${d.toFixed(1)}</td>`;
-    return `<td class="nh" style="color:#e06060;font-weight:600${s}">${d.toFixed(1)}</td>`;
-  }
-
-  let html = '';
-  let grand = {13:0,14:0,15:0,16:0};
-  let totalProjects = 0;
-
-  regionOrder.forEach(region => {
-    const rows = regions[region];
-    const incs = calcIncs(rows);
-    [13,14,15,16].forEach(ci => { grand[ci] += incs[ci]; });
-    totalProjects += rows.length;
-
-    // Region subtotal row
-    html += `<tr style="background:rgba(26,58,106,.4)">
-      <td colspan="5" style="font-weight:700;color:var(--acc-ll);padding:5px 10px;font-size:12px">
-        ${region} <span style="color:var(--text3);font-weight:400;font-size:11px">(${rows.length}个项目)</span>
-      </td>
-      <td class="nh"></td><td class="nh"></td><td class="nh"></td><td class="nh"></td>
-      <td class="nh"></td><td class="nh"></td><td class="nh"></td><td class="nh"></td>
-      <td class="nh"></td><td class="nh"></td><td class="nh"></td><td class="nh"></td>
-      <td class="nh" style="color:#e8c060;font-weight:700;border-left:2px solid var(--border2)">${incs[13]>=0.05?'+'+incs[13].toFixed(1):incs[13]<=-0.05?incs[13].toFixed(1):'—'}</td>
-      <td class="nh" style="color:#e8c060;font-weight:700">${incs[14]>=0.05?'+'+incs[14].toFixed(1):incs[14]<=-0.05?incs[14].toFixed(1):'—'}</td>
-      <td class="nh" style="color:#e8c060;font-weight:700">${incs[15]>=0.05?'+'+incs[15].toFixed(1):incs[15]<=-0.05?incs[15].toFixed(1):'—'}</td>
-      <td class="nh" style="color:#e8c060;font-weight:700">${incs[16]>=0.05?'+'+incs[16].toFixed(1):incs[16]<=-0.05?incs[16].toFixed(1):'—'}</td>
-    </tr>`;
-
-    // Smelter detail rows
-    rows.forEach(row => {
-      html += `<tr>
-        <td>${row[0]||''}</td><td>${row[1]||''}</td>
-        <td class="nh" style="font-size:11px;color:var(--text3)">${row[2]||''}</td>
-        <td>${row[3]||''}</td>
-        <td style="font-weight:600">${row[4]||''}</td>
-        ${fv(row[5])}
-        ${fv(row[6])}${fv(row[7])}${fv(row[8])}
-        ${fv(row[9])}${fv(row[10])}${fv(row[11])}
-        ${fv(row[12])}${fv(row[13])}${fv(row[14])}${fv(row[15])}${fv(row[16])}
-        ${fiRow(row[13],row[12],'border-left:2px solid var(--border2)')}
-        ${fiRow(row[14],row[13])}
-        ${fiRow(row[15],row[14])}
-        ${fiRow(row[16],row[15])}
-      </tr>`;
-    });
-  });
-
-  // Grand total
-  html += `<tr style="background:rgba(106,174,232,.1);font-weight:700;border-top:2px solid #2a4a7a">
-    <td colspan="5" style="color:var(--acc-ll);padding:6px 10px">全球增减量合计</td>
-    <td class="nh"></td><td class="nh"></td><td class="nh"></td><td class="nh"></td>
-    <td class="nh"></td><td class="nh"></td><td class="nh"></td><td class="nh"></td>
-    <td class="nh"></td><td class="nh"></td><td class="nh"></td><td class="nh"></td>
-    <td class="nh" style="color:#e8c060;font-weight:700;border-left:2px solid var(--border2)">+${grand[13].toFixed(1)}</td>
-    <td class="nh" style="color:#e8c060;font-weight:700">+${grand[14].toFixed(1)}</td>
-    <td class="nh" style="color:#e8c060;font-weight:700">+${grand[15].toFixed(1)}</td>
-    <td class="nh" style="color:#e8c060;font-weight:700">+${grand[16].toFixed(1)}</td>
-  </tr>`;
-
-  tbody.innerHTML = html;
-  const cnt = document.getElementById('tg-count');
-  if (cnt) cnt.textContent = totalProjects;
+  regions.forEach(r=>{const o=document.createElement('option');o.value=r;o.textContent=r;sel.appendChild(o);});
+  document.getElementById('tg-count').textContent=TG.filter(i=>i.type==='row').length+' 行';
 }
-
 function filterTg(){
   const q=document.getElementById('tg-search').value.toLowerCase();
   const reg=document.getElementById('tg-region').value;
@@ -1088,77 +1015,6 @@ function buildChartsInto(containerId, CHART_DEFS){
     });
   });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2052,24 +1908,6 @@ function elInitAll() {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <!-- ===== K线图 panel ===== -->
 <div class="panel active" id="panel-kl">
   <div style="padding:28px 36px;max-width:1400px;margin:0 auto;">
@@ -2486,3 +2324,4 @@ document.addEventListener('DOMContentLoaded',function(){
   </div>
 </div>
 </body>
+</html>
